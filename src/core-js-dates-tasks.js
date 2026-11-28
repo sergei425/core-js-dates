@@ -68,8 +68,11 @@ function getDayName(date) {
  * Date('2024-02-13T00:00:00Z') => Date('2024-02-16T00:00:00Z')
  * Date('2024-02-16T00:00:00Z') => Date('2024-02-23T00:00:00Z')
  */
-function getNextFriday(/* date */) {
-  throw new Error('Not implemented');
+function getNextFriday(date) {
+  const res = new Date(date);
+  const daysAhead = (5 - res.getDay() + 7) % 7 || 7;
+  res.setDate(res.getDate() + daysAhead);
+  return res;
 }
 
 /**
@@ -83,8 +86,8 @@ function getNextFriday(/* date */) {
  * 1, 2024 => 31
  * 2, 2024 => 29
  */
-function getCountDaysInMonth(/* month, year */) {
-  throw new Error('Not implemented');
+function getCountDaysInMonth(month, year) {
+  return new Date(year, month, 0).getDate();
 }
 
 /**
@@ -122,8 +125,11 @@ function getCountDaysOnPeriod(dateStart, dateEnd) {
  * '2024-02-02', { start: '2024-02-02', end: '2024-03-02' } => true
  * '2024-02-10', { start: '2024-02-02', end: '2024-03-02' } => true
  */
-function isDateInPeriod(/* date, period */) {
-  throw new Error('Not implemented');
+function isDateInPeriod(date, period) {
+  const data = new Date(date).getTime();
+  const start = new Date(period.start).getTime();
+  const end = new Date(period.end).getTime();
+  return start <= data && data <= end;
 }
 
 /**
@@ -153,8 +159,18 @@ function formatDate(date) {
  * 12, 2023 => 10
  * 1, 2024 => 8
  */
-function getCountWeekendsInMonth(/* month, year */) {
-  throw new Error('Not implemented');
+function getCountWeekendsInMonth(month, year) {
+  const days = new Date(year, month, 0).getDate();
+  let count = 0;
+
+  for (let day = 1; day <= days; day += 1) {
+    const weekday = new Date(year, month - 1, day).getDay();
+    if (weekday === 0 || weekday === 6) {
+      count += 1;
+    }
+  }
+
+  return count;
 }
 
 /**
@@ -170,8 +186,14 @@ function getCountWeekendsInMonth(/* month, year */) {
  * Date(2024, 0, 31) => 5
  * Date(2024, 1, 23) => 8
  */
-function getWeekNumberByDate(/* date */) {
-  throw new Error('Not implemented');
+function getWeekNumberByDate(date) {
+  const d = new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+  );
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
 }
 
 /**
@@ -185,8 +207,19 @@ function getWeekNumberByDate(/* date */) {
  * Date(2024, 0, 13) => Date(2024, 8, 13)
  * Date(2023, 1, 1) => Date(2023, 9, 13)
  */
-function getNextFridayThe13th(/* date */) {
-  throw new Error('Not implemented');
+function getNextFridayThe13th(date) {
+  const current = new Date(date.getTime());
+  current.setDate(13);
+
+  if (current <= date) {
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  while (current.getDay() !== 5) {
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  return current;
 }
 
 /**
@@ -246,8 +279,33 @@ function getQuarter(date) {
  * { start: '01-01-2024', end: '15-01-2024' }, 1, 3 => ['01-01-2024', '05-01-2024', '09-01-2024', '13-01-2024']
  * { start: '01-01-2024', end: '10-01-2024' }, 1, 1 => ['01-01-2024', '03-01-2024', '05-01-2024', '07-01-2024', '09-01-2024']
  */
-function getWorkSchedule(/* period, countWorkDays, countOffDays */) {
-  throw new Error('Not implemented');
+function getWorkSchedule(period, countWorkDays, countOffDays) {
+  const parseDate = (str) => {
+    const [day, month, year] = str.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day));
+  };
+
+  const formatScheduleDate = (date) => {
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  const startDate = parseDate(period.start);
+  const endDate = parseDate(period.end);
+  const schedule = [];
+
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    for (let i = 0; i < countWorkDays && current <= endDate; i += 1) {
+      schedule.push(formatScheduleDate(current));
+      current.setUTCDate(current.getUTCDate() + 1);
+    }
+    current.setUTCDate(current.getUTCDate() + countOffDays);
+  }
+
+  return schedule;
 }
 
 /**
